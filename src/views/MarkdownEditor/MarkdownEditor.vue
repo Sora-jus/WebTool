@@ -1,10 +1,58 @@
+<template>
+  <div class="markdown-editor">
+    <div class="tool-header">
+      <el-page-header @back="() => router.push('/')">
+        <template #content>
+          <span class="tool-title">
+            <el-icon><EditPen /></el-icon>
+            Markdown 编辑
+          </span>
+        </template>
+      </el-page-header>
+    </div>
+
+    <el-card class="editor-card">
+      <template #header>
+        <div class="card-header">
+          <span>编辑器</span>
+          <div class="header-actions">
+            <el-button size="small" @click="clearAll" type="danger">清空</el-button>
+          </div>
+        </div>
+      </template>
+      <div class="editor-container">
+        <div id="md-editor" class="monaco-editor"></div>
+      </div>
+    </el-card>
+
+    <el-card class="preview-card">
+      <template #header>
+        <div class="card-header">
+          <span>预览</span>
+          <div class="header-actions">
+            <el-button size="small" @click="copyOutput" type="success">复制</el-button>
+            <el-button size="small" @click="downloadHtml" type="primary">导出 HTML</el-button>
+          </div>
+        </div>
+      </template>
+      <div class="preview-container">
+        <div class="markdown-body" v-html="outputHtml"></div>
+      </div>
+    </el-card>
+  </div>
+</template>
+
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import * as monaco from 'monaco-editor'
 import { marked } from 'marked'
 import hljs from 'highlight.js'
+import { EditPen, ArrowLeft } from '@element-plus/icons-vue'
 import 'highlight.js/styles/github-dark.css'
 import samples from './samples.json'
+
+const router = useRouter()
 
 // Configure marked with highlight.js
 marked.setOptions({
@@ -62,14 +110,12 @@ const clearAll = () => {
 
 const copyOutput = () => {
   if (outputHtml.value) {
-    // 为了简化，我们只复制Markdown源码
     navigator.clipboard.writeText(inputMd.value)
   }
 }
 
 const downloadHtml = () => {
   if (outputHtml.value) {
-    // 创建一个简单的HTML文件用于导出，避免包含外部脚本
     const htmlContent = '<!DOCTYPE html><html><head><title>Markdown Render</title><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;line-height:1.6;padding:20px;max-width:800px;margin:0 auto;}pre{background:#f5f5f5;padding:10px;border-radius:5px;overflow-x:auto;}code{background:#f5f5f5;padding:2px 4px;border-radius:3px;}table{border-collapse:collapse;width:100%;}th,td{border:1px solid #ddd;padding:8px;text-align:left;}th{background-color:#f2f2f2;}</style></head><body>' + outputHtml.value + '</body></html>'
 
     const blob = new Blob([htmlContent], { type: 'text/html' })
@@ -83,60 +129,50 @@ const downloadHtml = () => {
 }
 
 onMounted(() => {
-  // 初始化编辑器
   initEditor()
-
-  // 设置默认示例内容
   inputMd.value = samples.sample
   renderMarkdown(samples.sample)
 })
 </script>
 
-<template>
-  <div class="markdown-editor">
-    <el-card class="editor-card">
-      <template #header>
-        <div class="card-header">
-          <span>Markdown 编辑器</span>
-          <div class="header-actions">
-            <el-button size="small" @click="clearAll" type="danger">清空</el-button>
-          </div>
-        </div>
-      </template>
-      <div class="editor-container">
-        <div id="md-editor" class="monaco-editor"></div>
-      </div>
-    </el-card>
-
-    <el-card class="preview-card">
-      <template #header>
-        <div class="card-header">
-          <span>预览</span>
-          <div class="header-actions">
-            <el-button size="small" @click="copyOutput" type="success">复制</el-button>
-            <el-button size="small" @click="downloadHtml" type="primary">导出HTML</el-button>
-          </div>
-        </div>
-      </template>
-      <div class="preview-container">
-        <div class="markdown-body" v-html="outputHtml"></div>
-      </div>
-    </el-card>
-  </div>
-</template>
-
 <style scoped>
 .markdown-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  min-height: calc(100vh - 60px);
+  background-color: var(--bg-primary);
+}
+
+.tool-header {
+  margin-bottom: 4px;
+}
+
+.tool-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.editor-cards {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
-  height: calc(100vh - 140px);
+  flex: 1;
 }
 
 .editor-card, .preview-card {
-  flex: 1;
   display: flex;
   flex-direction: column;
+  border: var(--card-border);
+  border-radius: 10px;
+  box-shadow: var(--card-shadow);
+  transition: box-shadow var(--transition-base);
+  background: var(--bg-card);
 }
 
 .card-header {
@@ -167,13 +203,13 @@ onMounted(() => {
   min-height: 300px;
   overflow: auto;
   padding: 15px;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   border-radius: 4px;
 }
 
 .markdown-body {
   line-height: 1.6;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .markdown-body h1,
@@ -185,7 +221,7 @@ onMounted(() => {
   margin-top: 1.5em;
   margin-bottom: 0.5em;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .markdown-body p {
@@ -211,18 +247,24 @@ onMounted(() => {
 }
 
 .markdown-body pre {
-  background-color: #f8f8f8;
+  background-color: #1e1e1e;
   border-radius: 3px;
   padding: 1em;
   overflow: auto;
   margin-bottom: 1em;
 }
 
+.markdown-body pre code {
+  background-color: transparent;
+  padding: 0;
+  color: #d4d4d4;
+}
+
 .markdown-body blockquote {
-  border-left: 4px solid #ddd;
+  border-left: 4px solid var(--border-color);
   margin-left: 0;
   padding-left: 1em;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .markdown-body table {
@@ -233,13 +275,13 @@ onMounted(() => {
 
 .markdown-body th,
 .markdown-body td {
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-color);
   padding: 0.5em;
   text-align: left;
 }
 
 .markdown-body th {
-  background-color: #f8f8f8;
+  background-color: var(--editor-bg);
   font-weight: bold;
 }
 
@@ -252,6 +294,10 @@ onMounted(() => {
 
 @media (max-width: 768px) {
   .markdown-editor {
+    padding: 12px;
+  }
+
+  .editor-cards {
     grid-template-columns: 1fr;
     grid-template-rows: 1fr 1fr;
   }

@@ -1,9 +1,54 @@
+<template>
+  <div class="code-studio">
+    <div class="tool-header">
+      <el-page-header @back="() => router.push('/')">
+        <template #content>
+          <span class="tool-title">
+            <el-icon><Brush /></el-icon>
+            样式调制
+          </span>
+        </template>
+      </el-page-header>
+    </div>
+
+    <el-card class="editor-card">
+      <template #header>
+        <div class="card-header">
+          <span>代码编辑器</span>
+          <div class="header-actions">
+            <el-button size="small" @click="clearAll" type="danger">清空</el-button>
+          </div>
+        </div>
+      </template>
+      <div class="editor-container">
+        <div id="code-editor" class="monaco-editor"></div>
+      </div>
+    </el-card>
+
+    <el-card class="preview-card">
+      <template #header>
+        <div class="card-header">
+          <span>预览</span>
+          <div class="header-actions">
+            <el-button size="small" @click="copyCode" type="success">复制</el-button>
+          </div>
+        </div>
+      </template>
+      <div class="preview-container">
+        <div ref="previewElement" class="preview-content"></div>
+      </div>
+    </el-card>
+  </div>
+</template>
 <script setup lang="ts">
-import { ref, onMounted, defineAsyncComponent } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import * as monaco from 'monaco-editor'
 import * as echarts from 'echarts'
+import { Brush, ArrowLeft } from '@element-plus/icons-vue'
 import samples from './samples.json'
 
+const router = useRouter()
 const inputCode = ref<string>('')
 const previewElement = ref<HTMLDivElement | null>(null)
 const editor: any = ref(null)
@@ -37,29 +82,21 @@ const initEditor = () => {
 
 const renderCode = (code: string) => {
   try {
-    // 简单检测是否为Vue组件代码
     isVueComponent.value = code.includes('<template>') && code.includes('<script>')
 
-    // 清除之前的图表实例
     if (chartInstance.value) {
       chartInstance.value.dispose()
       chartInstance.value = null
     }
 
-    // 如果有预览容器，清除内容
     if (previewElement.value) {
       previewElement.value.innerHTML = ''
 
-      // 如果是Vue组件，尝试渲染它
       if (isVueComponent.value) {
-        // 对于Vue组件，我们使用一个简单的方法进行预览
-        // 这里可以集成Vue的编译器或者使用iframe
-        previewElement.value.innerHTML = '<div class="vue-preview-placeholder">Vue组件渲染预览区域</div>'
+        previewElement.value.innerHTML = '<div class="vue-preview-placeholder">Vue 组件渲染预览区域</div>'
       } else if (code.includes('echarts')) {
-        // 处理ECharts图表
         renderChart(code)
       } else {
-        // 简单的HTML内容直接插入
         previewElement.value.innerHTML = code
       }
     }
@@ -70,15 +107,10 @@ const renderCode = (code: string) => {
   }
 }
 
-const renderChart = (code: string) => {
+const renderChart = (_code: string) => {
   if (!previewElement.value) return
 
-  // 尝试从代码中提取ECharts配置
   try {
-    // 在实际环境中，应该用更安全的方式解析代码
-    // 这里我们简化处理
-
-    // 为图表创建一个容器
     const chartContainer = document.createElement('div')
     chartContainer.id = 'chart-container'
     chartContainer.style.width = '100%'
@@ -86,10 +118,8 @@ const renderChart = (code: string) => {
 
     previewElement.value.appendChild(chartContainer)
 
-    // 创建图表实例
     chartInstance.value = echarts.init(chartContainer)
 
-    // 示例配置
     const option = {
       title: {
         text: '示例图表'
@@ -132,59 +162,50 @@ const copyCode = () => {
 }
 
 onMounted(() => {
-  // 初始化编辑器
   initEditor()
-
-  // 设置默认示例内容
   inputCode.value = samples.html
   renderCode(samples.html)
 })
 </script>
 
-<template>
-  <div class="code-studio">
-    <el-card class="editor-card">
-      <template #header>
-        <div class="card-header">
-          <span>代码编辑器</span>
-          <div class="header-actions">
-            <el-button size="small" @click="clearAll" type="danger">清空</el-button>
-          </div>
-        </div>
-      </template>
-      <div class="editor-container">
-        <div id="code-editor" class="monaco-editor"></div>
-      </div>
-    </el-card>
-
-    <el-card class="preview-card">
-      <template #header>
-        <div class="card-header">
-          <span>预览</span>
-          <div class="header-actions">
-            <el-button size="small" @click="copyCode" type="success">复制</el-button>
-          </div>
-        </div>
-      </template>
-      <div class="preview-container">
-        <div ref="previewElement" class="preview-content"></div>
-      </div>
-    </el-card>
-  </div>
-</template>
-
 <style scoped>
 .code-studio {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  min-height: calc(100vh - 60px);
+  background-color: var(--bg-primary);
+}
+
+.tool-header {
+  margin-bottom: 4px;
+}
+
+.tool-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.editor-cards {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
-  height: calc(100vh - 140px);
+  flex: 1;
 }
 
 .editor-card, .preview-card {
-  flex: 1;
   display: flex;
   flex-direction: column;
+  border: var(--card-border);
+  border-radius: 10px;
+  box-shadow: var(--card-shadow);
+  transition: box-shadow var(--transition-base);
+  background: var(--bg-card);
 }
 
 .card-header {
@@ -215,7 +236,7 @@ onMounted(() => {
   min-height: 300px;
   overflow: auto;
   padding: 15px;
-  background-color: #ffffff;
+  background-color: var(--bg-card);
   border-radius: 4px;
 }
 
@@ -242,6 +263,10 @@ onMounted(() => {
 
 @media (max-width: 768px) {
   .code-studio {
+    padding: 12px;
+  }
+
+  .editor-cards {
     grid-template-columns: 1fr;
     grid-template-rows: 1fr 1fr;
   }

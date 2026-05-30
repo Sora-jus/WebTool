@@ -3,23 +3,29 @@
     <el-container class="layout-container">
       <el-header class="app-header">
         <div class="header-content">
-          <h1 class="logo">工具网站</h1>
-          <el-menu
-            :default-active="activeTab"
-            mode="horizontal"
-            @select="handleSelect"
-            router
-            class="header-menu"
-          >
-            <el-menu-item index="/json-formatter">JSON格式化</el-menu-item>
-            <el-menu-item index="/markdown-editor">Markdown编辑</el-menu-item>
-            <el-menu-item index="/code-studio">样式调制</el-menu-item>
-          </el-menu>
+          <div class="logo">
+            <el-icon :size="24"><Tools /></el-icon>
+            <span>工具网站</span>
+          </div>
+          <AppMenu />
+          <div class="header-right">
+            <el-button
+              class="theme-toggle"
+              text
+              @click="themeStore.toggleTheme"
+              :title="themeStore.theme.theme === 'dark' ? '切换浅色模式' : '切换深色模式'"
+            >
+              <el-icon :size="20">
+                <Sunny v-if="themeStore.theme.theme === 'dark'" />
+                <Moon v-else />
+              </el-icon>
+            </el-button>
+          </div>
         </div>
       </el-header>
       <el-main class="app-main">
         <router-view v-slot="{ Component }">
-          <transition name="fade" mode="out-in">
+          <transition name="slide-fade" mode="out-in">
             <component :is="Component" />
           </transition>
         </router-view>
@@ -29,66 +35,106 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { Tools, Sunny, Moon } from '@element-plus/icons-vue'
+import AppMenu from '@/components/AppMenu.vue'
+import { useThemeStore } from '@/stores/theme'
 
-const route = useRoute()
-
-const activeTab = computed(() => route.path)
-
-const handleSelect = (key: string) => {
-  activeTab.value = key
-}
+const themeStore = useThemeStore()
 </script>
 
 <style scoped>
 .app {
-  height: 100vh;
-  background-color: #f5f7fa;
+  min-height: 100vh;
+  background-color: var(--bg-primary);
 }
 
 .layout-container {
-  height: 100%;
+  min-height: 100%;
 }
 
 .app-header {
-  background-color: #409eff;
-  color: white;
+  background: var(--header-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--header-text);
   padding: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
 .header-content {
   display: flex;
   align-items: center;
   height: 100%;
+  padding: 0 16px;
 }
 
 .logo {
-  margin: 0 30px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 20px;
   font-weight: 600;
+  white-space: nowrap;
+  margin-right: 24px;
 }
 
-.header-menu {
-  flex: 1;
-  border-bottom: none;
-  background-color: transparent;
+.header-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
+.theme-toggle {
+  color: var(--header-text);
+  padding: 8px;
+  border-radius: 8px;
+  transition: background-color var(--transition-base);
+}
+
+.theme-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.15);
 }
 
 .app-main {
-  padding: 20px;
-  height: calc(100vh - 60px);
-  overflow: auto;
+  padding: 0;
+  min-height: calc(100vh - 60px);
 }
 
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
+.slide-fade-enter-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.fade-enter-from,
-.fade-leave-to {
+.slide-fade-leave-active {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-fade-enter-from {
   opacity: 0;
+  transform: translateX(12px);
+}
+
+.slide-fade-leave-to {
+  opacity: 0;
+  transform: translateX(-8px);
+}
+
+@media (max-width: 768px) {
+  .header-content {
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 8px 12px;
+  }
+
+  .app-header {
+    height: auto !important;
+  }
+
+  .logo {
+    font-size: 16px;
+    margin-right: 8px;
+  }
 }
 </style>

@@ -1,8 +1,81 @@
+<template>
+  <div class="json-formatter">
+    <div class="tool-header">
+      <el-page-header @back="() => router.push('/')">
+        <template #content>
+          <span class="tool-title">
+            <el-icon><DocumentChecked /></el-icon>
+            JSON 格式化
+          </span>
+        </template>
+      </el-page-header>
+    </div>
+
+    <el-card class="json-card">
+      <template #header>
+        <div class="card-header">
+          <span>输入 JSON</span>
+          <div class="header-actions">
+            <el-button-group>
+              <el-button
+                  :type="formatType === 'pretty' ? 'primary' : ''"
+                  @click="formatType = 'pretty'; formatJsonHandler()"
+                  size="small"
+              >格式化</el-button
+              >
+              <el-button
+                  :type="formatType === 'compact' ? 'primary' : ''"
+                  @click="formatType = 'compact'; compressJson()"
+                  size="small"
+              >压缩</el-button
+              >
+              <el-button size="small" @click="validateJsonHandler">校验</el-button>
+              <el-button size="small" @click="clearAll" type="danger"
+              >清空</el-button
+              >
+            </el-button-group>
+          </div>
+        </div>
+      </template>
+      <div class="editor-container">
+        <div id="json-editor" class="monaco-editor"></div>
+      </div>
+      <div v-if="errorMsg" class="error-message" :class="errorMsg.includes('正确') ? 'success' : 'error'">
+        {{ errorMsg }}
+      </div>
+    </el-card>
+
+    <el-card class="json-card">
+      <template #header>
+        <div class="card-header">
+          <span>输出结果</span>
+          <div class="header-actions">
+            <el-button-group>
+              <el-button size="small" @click="copyOutput" type="success"
+              >复制</el-button
+              >
+              <el-button size="small" @click="downloadOutput" type="primary"
+              >下载</el-button
+              >
+            </el-button-group>
+          </div>
+        </div>
+      </template>
+      <div class="output-container">
+        <pre class="output-content">{{ outputJson }}</pre>
+      </div>
+    </el-card>
+  </div>
+</template>
+
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import * as monaco from 'monaco-editor'
+import { DocumentChecked, ArrowLeft } from '@element-plus/icons-vue'
 import { formatJson, validateJson } from './utils'
 
+const router = useRouter()
 const inputJson = ref<string>('')
 const outputJson = ref<string>('')
 const errorMsg = ref<string>('')
@@ -29,7 +102,6 @@ const initEditor = () => {
     editor.onDidChangeModelContent(() => {
       const value = editor.getValue()
       inputJson.value = value
-      // 触发格式化
       if (formatType.value === 'pretty') {
         formatJsonHandler()
       } else {
@@ -119,77 +191,44 @@ onMounted(() => {
 })
 </script>
 
-<template>
-  <div class="json-formatter">
-    <el-card class="json-card">
-      <template #header>
-        <div class="card-header">
-          <span>输入JSON</span>
-          <div class="header-actions">
-            <el-button-group>
-              <el-button
-                :type="formatType === 'pretty' ? 'primary' : ''"
-                @click="formatType = 'pretty'; formatJsonHandler()"
-                size="small"
-                >格式化</el-button
-              >
-              <el-button
-                :type="formatType === 'compact' ? 'primary' : ''"
-                @click="formatType = 'compact'; compressJson()"
-                size="small"
-                >压缩</el-button
-              >
-              <el-button size="small" @click="validateJsonHandler">校验</el-button>
-              <el-button size="small" @click="clearAll" type="danger"
-                >清空</el-button
-              >
-            </el-button-group>
-          </div>
-        </div>
-      </template>
-      <div class="editor-container">
-        <div id="json-editor" class="monaco-editor"></div>
-      </div>
-      <div v-if="errorMsg" class="error-message" :class="errorMsg.includes('正确') ? 'success' : 'error'">
-        {{ errorMsg }}
-      </div>
-    </el-card>
-
-    <el-card class="json-card">
-      <template #header>
-        <div class="card-header">
-          <span>输出结果</span>
-          <div class="header-actions">
-            <el-button-group>
-              <el-button size="small" @click="copyOutput" type="success"
-                >复制</el-button
-              >
-              <el-button size="small" @click="downloadOutput" type="primary"
-                >下载</el-button
-              >
-            </el-button-group>
-          </div>
-        </div>
-      </template>
-      <div class="output-container">
-        <pre class="output-content">{{ outputJson }}</pre>
-      </div>
-    </el-card>
-  </div>
-</template>
-
 <style scoped>
 .json-formatter {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  min-height: calc(100vh - 60px);
+  background-color: var(--bg-primary);
+}
+
+.tool-header {
+  margin-bottom: 4px;
+}
+
+.tool-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.json-cards {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
-  height: calc(100vh - 140px);
+  flex: 1;
 }
 
 .json-card {
-  flex: 1;
   display: flex;
   flex-direction: column;
+  border: var(--card-border);
+  border-radius: 10px;
+  box-shadow: var(--card-shadow);
+  transition: box-shadow var(--transition-base);
+  background: var(--bg-card);
 }
 
 .card-header {
@@ -255,6 +294,10 @@ onMounted(() => {
 
 @media (max-width: 768px) {
   .json-formatter {
+    padding: 12px;
+  }
+
+  .json-cards {
     grid-template-columns: 1fr;
     grid-template-rows: 1fr 1fr;
   }

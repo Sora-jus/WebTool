@@ -2,11 +2,13 @@ import { createRouter, createWebHashHistory, RouteRecordRaw } from 'vue-router'
 import JsonFormatter from '../views/JsonFormatter/JsonFormatter.vue'
 import MarkdownEditor from '../views/MarkdownEditor/MarkdownEditor.vue'
 import CodeStudio from '../views/CodeStudio/CodeStudio.vue'
+import Home from '../views/Home.vue'
 
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    redirect: '/json-formatter',
+    name: 'Home',
+    component: Home,
   },
   {
     path: '/json-formatter',
