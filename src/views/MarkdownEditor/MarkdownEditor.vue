@@ -43,12 +43,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick, shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
-import * as monaco from 'monaco-editor'
+import monaco from '@/monaco-config'
 import { marked } from 'marked'
 import hljs from 'highlight.js'
-import { EditPen, ArrowLeft } from '@element-plus/icons-vue'
+import { EditPen } from '@element-plus/icons-vue'
 import 'highlight.js/styles/github-dark.css'
 import samples from './samples.json'
 
@@ -65,51 +65,69 @@ marked.setOptions({
 
 const inputMd = ref<string>('')
 const outputHtml = ref<string>('')
-const editor: any = ref(null)
+const editorRef = shallowRef<monaco.editor.IStandaloneEditor | null>(null)
 
-const initEditor = () => {
+const initEditor = async () => {
+  await nextTick()
   const editorDom = document.getElementById('md-editor')
-  if (editorDom && !editor.value) {
-    editor.value = monaco.editor.create(editorDom, {
-      value: inputMd.value,
+  console.log('Initializing MD editor, DOM element:', editorDom)
+  if (!editorDom || editorRef.value) {
+    console.error('MD Editor DOM not found or editor already exists')
+    return
+  }
+  try {
+    editorRef.value = monaco.editor.create(editorDom, {
+      value: samples.sample,
       language: 'markdown',
       theme: 'vs-dark',
-      minimap: { enabled: true },
-      scrollbar: {
-        vertical: 'auto',
-        horizontal: 'auto',
-      },
+      minimap: { enabled: false },
+      scrollBeyondLastLine: false,
       fontSize: 14,
       lineNumbers: 'on',
       automaticLayout: true,
+      readOnly: false,
     })
+    console.log('MD Editor created successfully')
 
-    editor.value.onDidChangeModelContent(() => {
-      const value = editor.value.getValue()
+    inputMd.value = samples.sample
+    renderMarkdown(samples.sample)
+
+    editorRef.value.onDidChangeModelContent(() => {
+      const value = editorRef.value!.getValue()
       inputMd.value = value
       renderMarkdown(value)
     })
+  } catch (error) {
+    console.error('Error creating MD editor:', error)
   }
 }
 
+onBeforeUnmount(() => {
+  if (editorRef.value) {
+    console.log('Disposing MD editor')
+    editorRef.value.dispose()
+    editorRef.value = null
+  }
+})
+
 const renderMarkdown = (md: string) => {
   try {
-    outputHtml.value = marked(md)
+    outputHtml.value = marked.parse(md) as string
   } catch (e: any) {
-    outputHtml.value = `<div class="error">渲染错误: ${e.message}</div>`
+    outputHtml.value = `<div class="error">渲染错误：${e.message}</div>`
   }
 }
 
 const clearAll = () => {
   inputMd.value = ''
   outputHtml.value = ''
-  if (editor.value) {
-    editor.value.setValue('')
+  if (editorRef.value) {
+    editorRef.value.setValue('')
   }
 }
 
 const copyOutput = () => {
-  if (outputHtml.value) {
+  if (inputMd.value) {
     navigator.clipboard.writeText(inputMd.value)
   }
 }
@@ -130,8 +148,6 @@ const downloadHtml = () => {
 
 onMounted(() => {
   initEditor()
-  inputMd.value = samples.sample
-  renderMarkdown(samples.sample)
 })
 </script>
 
@@ -158,13 +174,6 @@ onMounted(() => {
   color: var(--text-primary);
 }
 
-.editor-cards {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  flex: 1;
-}
-
 .editor-card, .preview-card {
   display: flex;
   flex-direction: column;
@@ -188,19 +197,22 @@ onMounted(() => {
 
 .editor-container {
   flex: 1;
-  min-height: 300px;
+  min-height: 500px;
+  height: 500px;
   border-radius: 4px;
   overflow: hidden;
+  border: 1px solid var(--border-color, #333);
 }
 
 .monaco-editor {
   width: 100%;
   height: 100%;
+  min-height: 500px;
 }
 
 .preview-container {
   flex: 1;
-  min-height: 300px;
+  min-height: 400px;
   overflow: auto;
   padding: 15px;
   background-color: var(--bg-card);
@@ -297,7 +309,7 @@ onMounted(() => {
     padding: 12px;
   }
 
-  .editor-cards {
+  .editor-card, .preview-card {
     grid-template-columns: 1fr;
     grid-template-rows: 1fr 1fr;
   }

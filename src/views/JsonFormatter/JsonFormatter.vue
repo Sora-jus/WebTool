@@ -21,23 +21,31 @@
                   :type="formatType === 'pretty' ? 'primary' : ''"
                   @click="formatType = 'pretty'; formatJsonHandler()"
                   size="small"
-              >格式化</el-button
               >
+                <el-icon><MagicStick /></el-icon>
+                <span>格式化</span>
+              </el-button>
               <el-button
                   :type="formatType === 'compact' ? 'primary' : ''"
                   @click="formatType = 'compact'; compressJson()"
                   size="small"
-              >压缩</el-button
               >
-              <el-button size="small" @click="validateJsonHandler">校验</el-button>
-              <el-button size="small" @click="clearAll" type="danger"
-              >清空</el-button
-              >
+                <el-icon><Minus /></el-icon>
+                <span>压缩</span>
+              </el-button>
+              <el-button size="small" @click="validateJsonHandler">
+                <el-icon><CircleCheck /></el-icon>
+                <span>校验</span>
+              </el-button>
+              <el-button size="small" @click="clearAll" type="danger">
+                <el-icon><Delete /></el-icon>
+                <span>清空</span>
+              </el-button>
             </el-button-group>
           </div>
         </div>
       </template>
-      <div class="editor-container">
+      <div class="editor-container" ref="editorContainer">
         <div id="json-editor" class="monaco-editor"></div>
       </div>
       <div v-if="errorMsg" class="error-message" :class="errorMsg.includes('正确') ? 'success' : 'error'">
@@ -51,8 +59,10 @@
           <span>输出结果</span>
           <div class="header-actions">
             <el-button-group>
-              <el-button size="small" @click="copyOutput" type="success"
-              >复制</el-button
+              <el-button size="small" @click="copyOutput" type="success" class="action-btn">
+                <el-icon><DocumentCopy /></el-icon>
+                <span>复制</span>
+              </el-button
               >
               <el-button size="small" @click="downloadOutput" type="primary"
               >下载</el-button
@@ -69,10 +79,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import * as monaco from 'monaco-editor'
-import { DocumentChecked, ArrowLeft } from '@element-plus/icons-vue'
+import monaco from '@/monaco-config'
+import { DocumentChecked, MagicStick, Minus, CircleCheck, Delete } from '@element-plus/icons-vue'
 import { formatJson, validateJson } from './utils'
 
 const router = useRouter()
@@ -80,34 +90,42 @@ const inputJson = ref<string>('')
 const outputJson = ref<string>('')
 const errorMsg = ref<string>('')
 const formatType = ref<'pretty' | 'compact'>('pretty')
+const editorContainer = ref<HTMLElement | null>(null)
 let editor: any = null
 
-const initEditor = () => {
+const initEditor = async () => {
+  await nextTick()
   const editorDom = document.getElementById('json-editor')
+  console.log('Initializing JSON editor, DOM element:', editorDom)
   if (editorDom && !editor) {
-    editor = monaco.editor.create(editorDom, {
-      value: inputJson.value,
-      language: 'json',
-      theme: 'vs-dark',
-      minimap: { enabled: true },
-      scrollbar: {
-        vertical: 'auto',
-        horizontal: 'auto',
-      },
-      fontSize: 14,
-      lineNumbers: 'on',
-      automaticLayout: true,
-    })
+    try {
+      editor = monaco.editor.create(editorDom, {
+        value: inputJson.value,
+        language: 'json',
+        theme: 'vs-dark',
+        minimap: { enabled: false },
+        scrollBeyondLastLine: false,
+        fontSize: 14,
+        lineNumbers: 'on',
+        automaticLayout: true,
+        readOnly: false,
+      })
+      console.log('JSON Editor created successfully')
 
-    editor.onDidChangeModelContent(() => {
-      const value = editor.getValue()
-      inputJson.value = value
-      if (formatType.value === 'pretty') {
-        formatJsonHandler()
-      } else {
-        compressJson()
-      }
-    })
+      editor.onDidChangeModelContent(() => {
+        const value = editor.getValue()
+        inputJson.value = value
+        if (formatType.value === 'pretty') {
+          formatJsonHandler()
+        } else {
+          compressJson()
+        }
+      })
+    } catch (error) {
+      console.error('Error creating JSON editor:', error)
+    }
+  } else {
+    console.error('JSON Editor DOM not found or editor already exists')
   }
 }
 
@@ -189,6 +207,14 @@ const downloadOutput = () => {
 onMounted(() => {
   initEditor()
 })
+
+onBeforeUnmount(() => {
+  if (editor) {
+    console.log('Disposing JSON editor')
+    editor.dispose()
+    editor = null
+  }
+})
 </script>
 
 <style scoped>
@@ -219,6 +245,7 @@ onMounted(() => {
   grid-template-columns: 1fr 1fr;
   gap: 20px;
   flex: 1;
+  min-height: 0;
 }
 
 .json-card {
@@ -244,14 +271,17 @@ onMounted(() => {
 
 .editor-container {
   flex: 1;
-  min-height: 300px;
+  min-height: 400px;
+  height: 400px;
   border-radius: 4px;
   overflow: hidden;
+  border: 1px solid var(--border-color, #333);
 }
 
 .monaco-editor {
   width: 100%;
   height: 100%;
+  min-height: 400px;
 }
 
 .output-container {

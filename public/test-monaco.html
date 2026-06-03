@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monaco Editor 测试</title>
+    <style>
+        body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+        .editor-container { width: 100%; height: 400px; border: 1px solid #ccc; margin-top: 20px; }
+        #status { margin: 10px 0; padding: 10px; background: #f0f0f0; }
+    </style>
+</head>
+<body>
+    <h1>Monaco Editor 功能测试</h1>
+    <div id="status">正在加载 Monaco Editor...</div>
+    <div class="editor-container">
+        <div id="test-editor" style="width:100%;height:100%;"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs/loader.js"></script>
+    <script>
+        require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs' }});
+
+        require(['vs/editor/editor.main'], function() {
+            document.getElementById('status').innerHTML = '✓ Monaco Editor 加载成功！可以输入内容了。';
+            document.getElementById('status').style.background = '#d4edda';
+
+            var editor = monaco.editor.create(document.getElementById('test-editor'), {
+                value: '// 在这里输入 JSON 或代码\n{"name": "test", "value": 123}',
+                language: 'json',
+                theme: 'vs-dark',
+                automaticLayout: true
+            });
+
+            editor.onDidChangeModelContent(function() {
+                console.log('Content changed:', editor.getValue());
+            });
+        });
+    </script>
+</body>
+</html>

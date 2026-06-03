@@ -2,7 +2,17 @@
   "permissions": {
     "allow": [
       "Bash(chmod +x *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(npm install *)",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(pkill -f \"vite\")",
+      "Bash(pkill -f vite)",
+      "Read(//tmp/**)",
+      "Bash(npx vite *)",
+      "Bash(curl -s http://localhost:3002)",
+      "Bash(kill %1)",
+      "Bash(curl -s http://localhost:3006/src/main.ts)",
+      "Bash(curl -s http://localhost:3006/src/monaco-config.ts)"
     ]
   }
 }

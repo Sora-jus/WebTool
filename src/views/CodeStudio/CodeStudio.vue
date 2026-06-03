@@ -40,45 +40,67 @@
     </el-card>
   </div>
 </template>
+
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick, shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
-import * as monaco from 'monaco-editor'
+import monaco from '@/monaco-config'
 import * as echarts from 'echarts'
-import { Brush, ArrowLeft } from '@element-plus/icons-vue'
+import { Brush } from '@element-plus/icons-vue'
 import samples from './samples.json'
 
 const router = useRouter()
 const inputCode = ref<string>('')
 const previewElement = ref<HTMLDivElement | null>(null)
-const editor: any = ref(null)
-const chartInstance: any = ref(null)
+const editorRef = shallowRef<monaco.editor.IStandaloneEditor | null>(null)
+const chartInstance = shallowRef<echarts.ECharts | null>(null)
 const isVueComponent = ref<boolean>(false)
 
-const initEditor = () => {
+const initEditor = async () => {
+  await nextTick()
   const editorDom = document.getElementById('code-editor')
-  if (editorDom && !editor.value) {
-    editor.value = monaco.editor.create(editorDom, {
-      value: inputCode.value,
+  console.log('Initializing Code editor, DOM element:', editorDom)
+  if (!editorDom || editorRef.value) {
+    console.error('Code Editor DOM not found or editor already exists')
+    return
+  }
+  try {
+    editorRef.value = monaco.editor.create(editorDom, {
+      value: samples.html,
       language: 'html',
       theme: 'vs-dark',
-      minimap: { enabled: true },
-      scrollbar: {
-        vertical: 'auto',
-        horizontal: 'auto',
-      },
+      minimap: { enabled: false },
+      scrollBeyondLastLine: false,
       fontSize: 14,
       lineNumbers: 'on',
       automaticLayout: true,
+      readOnly: false,
     })
+    console.log('Code Editor created successfully')
 
-    editor.value.onDidChangeModelContent(() => {
-      const value = editor.value.getValue()
+    inputCode.value = samples.html
+    renderCode(samples.html)
+
+    editorRef.value.onDidChangeModelContent(() => {
+      const value = editorRef.value!.getValue()
       inputCode.value = value
       renderCode(value)
     })
+  } catch (error) {
+    console.error('Error creating Code editor:', error)
   }
 }
+
+onBeforeUnmount(() => {
+  if (editorRef.value) {
+    console.log('Disposing Code editor')
+    editorRef.value.dispose()
+    editorRef.value = null
+  }
+  if (chartInstance.value) {
+    chartInstance.value.dispose()
+  }
+})
 
 const renderCode = (code: string) => {
   try {
@@ -86,7 +108,6 @@ const renderCode = (code: string) => {
 
     if (chartInstance.value) {
       chartInstance.value.dispose()
-      chartInstance.value = null
     }
 
     if (previewElement.value) {
@@ -102,12 +123,12 @@ const renderCode = (code: string) => {
     }
   } catch (e: any) {
     if (previewElement.value) {
-      previewElement.value.innerHTML = `<div class="error">渲染错误: ${e.message}</div>`
+      previewElement.value.innerHTML = `<div class="error">渲染错误：${e.message}</div>`
     }
   }
 }
 
-const renderChart = (_code: string) => {
+const renderChart = (code: string) => {
   if (!previewElement.value) return
 
   try {
@@ -118,7 +139,8 @@ const renderChart = (_code: string) => {
 
     previewElement.value.appendChild(chartContainer)
 
-    chartInstance.value = echarts.init(chartContainer)
+    const chart = echarts.init(chartContainer)
+    chartInstance.value = chart
 
     const option = {
       title: {
@@ -135,9 +157,11 @@ const renderChart = (_code: string) => {
       }]
     }
 
-    chartInstance.value.setOption(option)
+    chart.setOption(option)
   } catch (e: any) {
-    previewElement.value.innerHTML = `<div class="error">图表渲染错误: ${e.message}</div>`
+    if (previewElement.value) {
+      previewElement.value.innerHTML = `<div class="error">图表渲染错误：${e.message}</div>`
+    }
   }
 }
 
@@ -146,12 +170,11 @@ const clearAll = () => {
   if (previewElement.value) {
     previewElement.value.innerHTML = ''
   }
-  if (editor.value) {
-    editor.value.setValue('')
+  if (editorRef.value) {
+    editorRef.value.setValue('')
   }
   if (chartInstance.value) {
     chartInstance.value.dispose()
-    chartInstance.value = null
   }
 }
 
@@ -163,8 +186,6 @@ const copyCode = () => {
 
 onMounted(() => {
   initEditor()
-  inputCode.value = samples.html
-  renderCode(samples.html)
 })
 </script>
 
@@ -191,13 +212,6 @@ onMounted(() => {
   color: var(--text-primary);
 }
 
-.editor-cards {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  flex: 1;
-}
-
 .editor-card, .preview-card {
   display: flex;
   flex-direction: column;
@@ -221,19 +235,22 @@ onMounted(() => {
 
 .editor-container {
   flex: 1;
-  min-height: 300px;
+  min-height: 500px;
+  height: 500px;
   border-radius: 4px;
   overflow: hidden;
+  border: 1px solid var(--border-color, #333);
 }
 
 .monaco-editor {
   width: 100%;
   height: 100%;
+  min-height: 500px;
 }
 
 .preview-container {
   flex: 1;
-  min-height: 300px;
+  min-height: 400px;
   overflow: auto;
   padding: 15px;
   background-color: var(--bg-card);
@@ -266,7 +283,7 @@ onMounted(() => {
     padding: 12px;
   }
 
-  .editor-cards {
+  .editor-card, .preview-card {
     grid-template-columns: 1fr;
     grid-template-rows: 1fr 1fr;
   }

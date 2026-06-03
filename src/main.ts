@@ -7,6 +7,7 @@ import router from './router'
 import App from './App.vue'
 import '@/styles/global.css'
 import '@/stores/theme'
+import 'monaco-editor/min/vs/editor/editor.main.css'
 
 const app = createApp(App)
 
