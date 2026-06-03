@@ -191,16 +191,17 @@ onMounted(() => {
 
 <style scoped>
 .code-studio {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 16px;
   padding: 20px;
-  min-height: calc(100vh - 60px);
+  height: calc(100vh - 60px);
   background-color: var(--bg-primary);
 }
 
 .tool-header {
-  margin-bottom: 4px;
+  grid-column: 1 / -1;
 }
 
 .tool-title {
@@ -234,9 +235,7 @@ onMounted(() => {
 }
 
 .editor-container {
-  flex: 1;
-  min-height: 500px;
-  height: 500px;
+  height: 100%;
   border-radius: 4px;
   overflow: hidden;
   border: 1px solid var(--border-color, #333);
@@ -245,12 +244,11 @@ onMounted(() => {
 .monaco-editor {
   width: 100%;
   height: 100%;
-  min-height: 500px;
 }
 
 .preview-container {
   flex: 1;
-  min-height: 400px;
+  min-height: 100%;
   overflow: auto;
   padding: 15px;
   background-color: var(--bg-card);
@@ -281,6 +279,7 @@ onMounted(() => {
 @media (max-width: 768px) {
   .code-studio {
     padding: 12px;
+    grid-template-columns: 1fr;
   }
 
   .editor-card, .preview-card {

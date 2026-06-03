@@ -219,16 +219,17 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .json-formatter {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 16px;
   padding: 20px;
-  min-height: calc(100vh - 60px);
+  height: calc(100vh - 60px);
   background-color: var(--bg-primary);
 }
 
 .tool-header {
-  margin-bottom: 4px;
+  grid-column: 1 / -1;
 }
 
 .tool-title {
@@ -270,9 +271,7 @@ onBeforeUnmount(() => {
 }
 
 .editor-container {
-  flex: 1;
-  min-height: 400px;
-  height: 400px;
+  height: 100%;
   border-radius: 4px;
   overflow: hidden;
   border: 1px solid var(--border-color, #333);
@@ -281,12 +280,11 @@ onBeforeUnmount(() => {
 .monaco-editor {
   width: 100%;
   height: 100%;
-  min-height: 400px;
 }
 
 .output-container {
   flex: 1;
-  min-height: 300px;
+  min-height: 100%;
   background-color: #1e1e1e;
   border-radius: 4px;
   overflow: hidden;
@@ -325,9 +323,10 @@ onBeforeUnmount(() => {
 @media (max-width: 768px) {
   .json-formatter {
     padding: 12px;
+    grid-template-columns: 1fr;
   }
 
-  .json-cards {
+  .json-card {
     grid-template-columns: 1fr;
     grid-template-rows: 1fr 1fr;
   }
