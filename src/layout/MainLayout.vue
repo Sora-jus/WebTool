@@ -1,9 +1,41 @@
 <template>
-  <MainLayout></MainLayout>
+  <div class="app">
+    <el-container class="layout-container">
+      <el-header class="app-header">
+        <div class="header-content">
+          <div class="logo">
+            <el-icon :size="24"><Tools /></el-icon>
+            <span>工具网站</span>
+          </div>
+          <AppMenu />
+          <div class="header-right">
+            <el-button
+                class="theme-toggle"
+                text
+                @click="themeStore.toggleTheme"
+                :title="themeStore.theme.theme === 'dark' ? '切换浅色模式' : '切换深色模式'"
+            >
+              <el-icon :size="20">
+                <Sunny v-if="themeStore.theme.theme === 'dark'" />
+                <Moon v-else />
+              </el-icon>
+            </el-button>
+          </div>
+        </div>
+      </el-header>
+      <el-main class="app-main">
+        <router-view />
+      </el-main>
+    </el-container>
+  </div>
 </template>
 
 <script setup lang="ts">
-import MainLayout from "@/layout/MainLayout.vue";
+import { Tools, Sunny, Moon } from '@element-plus/icons-vue'
+import AppMenu from '@/components/AppMenu.vue'
+import { useThemeStore } from '@/stores/theme'
+
+const themeStore = useThemeStore()
 </script>
 
 <style scoped>
@@ -65,24 +97,6 @@ import MainLayout from "@/layout/MainLayout.vue";
 .app-main {
   padding: 0;
   min-height: calc(100vh - 60px);
-}
-
-.slide-fade-enter-active {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.slide-fade-leave-active {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.slide-fade-enter-from {
-  opacity: 0;
-  transform: translateX(12px);
-}
-
-.slide-fade-leave-to {
-  opacity: 0;
-  transform: translateX(-8px);
 }
 
 @media (max-width: 768px) {
